@@ -7,4 +7,6 @@
 - Navegador: recorrido completo de demostración, aparición de «Otro: ¿cuál?», campos obligatorios y salto de filtro negativo a cierre.
 - Presentación: anchos de prueba 390, 768 y 1366 px; sin desbordamiento horizontal. Inspección visual de controles de campo en móvil.
 
-Estas pruebas no equivalen a una comprobación de conexión con Supabase alojado. La verificación final exige crear el proyecto independiente, ejecutar el esquema, habilitar usuarios y enviar una entrevista de prueba por el enlace público. No se han recogido entrevistas reales.
+Se creó el proyecto independiente «Encuesta Moniquira 2026» en Supabase y se ejecutó el esquema completo con resultado satisfactorio. Se configuró la conexión local y en GitHub Actions usando la clave publicable. La comprobación real de la API devuelve el código PostgreSQL 42501 al intentar leer o guardar sin autenticación, como corresponde. No se almacenaron datos en esta comprobación.
+
+Pendiente: crear y habilitar la primera cuenta de encuestador/coordinador y probar un envío autenticado desde el enlace público. No se han recogido entrevistas reales.

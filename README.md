@@ -6,7 +6,7 @@ Aplicación independiente basada en la arquitectura de Subasta Mundialista: Reac
 
 Frontend publicado en **https://daniel9130.github.io/encuesta-moniquira/**. Código en **https://github.com/daniel9130/encuesta-moniquira**.
 
-**Estado actual: demostración sin almacenamiento real.** Falta completar la creación del proyecto Supabase independiente, ejecutar el esquema, habilitar usuarios de campo y configurar las variables de conexión. La pantalla informa esta condición. No usar para recoger entrevistas reales hasta verificar un envío contra Supabase. La compilación, ocho pruebas automatizadas y el recorrido de demostración fueron comprobados; consulte `docs/verificacion.md`.
+**Estado actual: base independiente creada y conexión configurada; primera cuenta pendiente.** El esquema está instalado en Supabase y se verificó que su API bloquea lectura y escritura anónimas. El frontend usa la conexión mediante variables de GitHub Actions. Antes de recoger entrevistas reales falta habilitar la primera cuenta y verificar un envío autenticado. La compilación, ocho pruebas automatizadas y el recorrido de demostración fueron comprobados; consulte `docs/verificacion.md`.
 
 ## Ejecutar
 
