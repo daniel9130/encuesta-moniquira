@@ -26,21 +26,35 @@ Configure en `.env` la URL y clave pública de un proyecto Supabase independient
 
 1. Crear un proyecto independiente en Supabase.
 2. Ejecutar **database/schema.sql** en SQL Editor. Es una migración inicial; no ejecutarla sobre tablas existentes ni sobre la subasta.
-3. Crear usuarios de campo en Authentication, desactivar registro público y asignar sus códigos mediante SQL:
+3. Ejecutar **database/002_roles_panel.sql** una sola vez. Para la instalación publicada, ya está aplicada; no repetir el esquema inicial.
+4. Desactivar registro público y crear una cuenta de coordinación en Authentication. Asignarle su perfil mediante SQL:
 
 ```sql
 insert into public.encuestadores(user_id,codigo,rol)
-values ('UUID-DEL-USUARIO','E001','encuestador');
--- Crear una cuenta de coordinación separada:
-insert into public.encuestadores(user_id,codigo,rol)
-values ('UUID-DEL-ADMIN','E999','admin');
+values ('UUID-DEL-ADMIN','E001','admin');
 ```
 
 Las contraseñas las gestiona Supabase Auth; no se incluyen en el código. El código E001 identifica a la persona y no es una contraseña. Cada cuenta activa puede enviar y consultar sus propios registros. La cuenta administradora puede consultar y exportar todos. Los visitantes sin sesión no pueden leer ni escribir respuestas. No se conceden permisos de modificación directa: toda escritura pasa por una función que valida respuestas y propietario.
 
+## Roles y seguimiento
+
+- Administrador: https://daniel9130.github.io/encuesta-moniquira/?rol=admin — ingresa con su correo y contraseña. Ve ingresos, última actividad, producción por persona y exportación global.
+- Encuestador: https://daniel9130.github.io/encuesta-moniquira/ — ingresa únicamente con código (por ejemplo E002) y su contraseña. Ve sus totales y borradores. No necesita conocer el correo ni la contraseña del administrador.
+- Ambos tienen el botón **Iniciar encuesta**. El reloj de la entrevista empieza al pulsarlo.
+
+El panel se actualiza cada 30 segundos. La actividad se registra cada minuto con la página visible; no garantiza presencia en línea. El registro muestra las últimas 100 sesiones exitosas desde esta versión, sin intentos fallidos ni reconstrucción de ingresos anteriores. Las entrevistas se cuentan como completas, borradores o cerradas incompletas. «Hoy» usa la fecha de cierre en Colombia. Seleccionar un rol en pantalla no cambia los permisos: PostgreSQL verifica el perfil activo.
+
+### Dar acceso a una persona de campo
+
+1. En Supabase → Authentication → Users → Add user → Create new user, crear `e002@encuestadores.invalid`, definir una contraseña individual y activar **Auto confirm user**. Es un identificador técnico sin buzón; no se envía invitación.
+2. En el panel administrador abrir **Habilitar un encuestador con acceso independiente**, indicar `E002` y el nombre de la persona, y habilitarla.
+3. Entregar a esa persona solo el enlace, `E002` y su contraseña. Repetir con E003, E004, etc. E001 está reservado para el administrador existente.
+
+Las cuentas técnicas no reciben correos de recuperación; la coordinación administra sus contraseñas en Supabase. Para suspender acceso, cambiar `activo` a `false` en su perfil de `encuestadores`. El panel solo habilita perfiles de encuestador, nunca administradores. La primera cuenta de campo debe crearse antes de utilizar este acceso.
+
 ## Trabajo en campo
 
-1. Abrir el enlace e ingresar con la cuenta asignada.
+1. Abrir el enlace, seleccionar **Encuestador**, ingresar con código y contraseña propios y pulsar **Iniciar encuesta**.
 2. Indicar el sector de aplicación, registrar consentimiento y aplicar el filtro.
 3. Leer literalmente preguntas e instrucciones. Las preguntas espontáneas no muestran listas de candidatos.
 4. Revisar y enviar. Solo la confirmación del servidor significa que la encuesta quedó guardada.
