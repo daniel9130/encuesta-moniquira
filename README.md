@@ -54,6 +54,10 @@ Las cuentas técnicas no reciben correos de recuperación; la coordinación admi
 
 ## Trabajo en campo
 
+Desde la versión `moniquira-2026-09-v2`, todas las preguntas y el sector son opcionales. Se puede continuar y enviar con respuestas vacías; «Dejar sin respuesta» borra una selección. Un vacío no equivale a «No sabe / No responde». «Completa» indica finalización, no respuesta a todas las preguntas. Si se marca rechazo o filtro negativo, se conserva el cierre incompleto y se omiten las opiniones. Los borradores v1 se convierten a v2 al guardarlos desde la aplicación actual, conservando su ID. Las encuestas cerradas anteriores no cambian.
+
+Instalaciones nuevas: aplicar `schema.sql`, `002_roles_panel.sql` y `003_optional_questions.sql` en ese orden. La migración 003 agrega v2 sin reemplazar la definición histórica v1. No volver a generar el esquema inicial para actualizar producción.
+
 1. Abrir el enlace, seleccionar **Encuestador**, ingresar con código y contraseña propios y pulsar **Iniciar encuesta**.
 2. Indicar el sector de aplicación, registrar consentimiento y aplicar el filtro.
 3. Leer literalmente preguntas e instrucciones. Las preguntas espontáneas no muestran listas de candidatos.

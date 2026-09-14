@@ -11,7 +11,7 @@ test('PostgreSQL: permisos, validación, borradores, secuencia e idempotencia',a
  await pg.exec(`insert into auth.users values('${u1}'),('${u2}'),('${admin}'); insert into public.encuestadores values('${u1}','E001','encuestador',true),('${u2}','E002','encuestador',true),('${admin}','E999','admin',true);`);
  async function login(id){await pg.exec('reset role');await pg.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await pg.exec('set role authenticated');}
  const a={};for(const q of questions){if(!q.when)a[q.id]=q.options?q.options[0]:q.type==='mentions'?['Prueba']: 'Prueba';}a.p5_nombre='Prueba';
- async function save(id,answers,final=true){return (await pg.query('select public.guardar_encuesta($1,now()-interval \'10 minutes\',$2,\'Sector prueba\',$3,$4) as r',[id,answers,final,VERSION])).rows[0].r;}
+ async function save(id,answers,final=true,version='moniquira-2026-09-v1'){return (await pg.query('select public.guardar_encuesta($1,now()-interval \'10 minutes\',$2,\'Sector prueba\',$3,$4) as r',[id,answers,final,version])).rows[0].r;}
  await login(u1);
  const cid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
  const d=await save(cid,{consentimiento:'Sí'},false);assert.equal(d.estado,'incompleta');
@@ -27,5 +27,15 @@ test('PostgreSQL: permisos, validación, borradores, secuencia e idempotencia',a
  const noConsent=await save('cccccccc-cccc-4ccc-8ccc-cccccccccccc',{consentimiento:'No',p1:'Mala'});assert.equal(noConsent.estado,'incompleta');
  await login(admin);assert.equal((await pg.query('select * from exportacion_encuestas')).rows.length,3);
  await pg.exec('reset role; set role anon');await assert.rejects(()=>pg.query('select * from encuestas'),/permission denied/);await assert.rejects(()=>save('dddddddd-dddd-4ddd-8ddd-dddddddddddd',a),/permission denied/);
+ await pg.exec('reset role');await pg.exec(readFileSync('database/003_optional_questions.sql','utf8'));
+ await login(u1);
+ const empty=(await pg.query("select guardar_encuesta('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',now(),'{}','',true,$1) as r",[VERSION])).rows[0].r;
+ assert.equal(empty.estado,'completa');
+ const stored=(await pg.query("select respuestas,zona_aplicacion,version from encuestas where client_id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'")).rows[0];
+ assert.deepEqual(stored,{respuestas:{},zona_aplicacion:'',version:VERSION});
+ const oldDraft=await save('ffffffff-ffff-4fff-8fff-ffffffffffff',{consentimiento:'Sí'},false);
+ const upgraded=await save('ffffffff-ffff-4fff-8fff-ffffffffffff',{},true,VERSION);assert.equal(upgraded.id,oldDraft.id);
+ await assert.rejects(()=>save('abababab-abab-4bab-8bab-abababababab',{p1:'Inventado'},true,VERSION),/Opción no válida/);
+ assert.equal((await save('abababab-abab-4bab-8bab-abababababab',{p6:'Otro'},true,VERSION)).estado,'completa');
  await pg.close();
 });

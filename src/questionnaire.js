@@ -1,9 +1,9 @@
-export const VERSION='moniquira-2026-09-v1';
+export const VERSION='moniquira-2026-09-v2';
 export const candidates=['Adriana Camacho','Alex Peña','Yoiner Moreno','Clodomiro Ariza','Eliana Mayorga','Luis Carlos Olarte','Alejandro Flores'];
 export const rating=['Muy Buena','Buena','Regular','Mala','No sabe / No responde'];
 export const opinion=['Favorable','Desfavorable','La conoce, sin opinión','No la conoce','NS/NR'];
 export const sections=['Inicio','Gestión municipal','Menciones espontáneas','Opinión de aspirantes','Preferencia electoral','Otras gestiones','Clasificación','Revisión'];
-const q=(id,label,type,options,section,extra={})=>({id,label,type,options,section,required:true,...extra});
+const q=(id,label,type,options,section,extra={})=>({id,label,type,options,section,required:false,...extra});
 export const questions=[
  q('consentimiento','La participación es voluntaria. No se solicitan nombres ni documentos. Puede abstenerse de responder. ¿Acepta participar?','radio',['Sí','No'],0),
  q('filtro','¿Tiene 18 años o más y reside actualmente en Moniquirá?','radio',['Sí','No'],0),
@@ -27,8 +27,8 @@ export const questions=[
  q('observacion','Observación breve (si aplica)','text',null,6,{required:false,hint:'No registrar nombres, teléfonos ni datos que identifiquen al encuestado.'})
 ];
 export function visibleQuestions(a){return questions.filter(q=>(!q.when||a[q.when[0]]===q.when[1])&&(q.id==='consentimiento'||a.consentimiento!=='No')&&(q.section===0||a.filtro!=='No'));}
-export function cleanAnswers(a){return Object.fromEntries(visibleQuestions(a).filter(q=>a[q.id]!==undefined).map(q=>[q.id,a[q.id]]));}
-export function validate(a,section){const errors={};for(const q of visibleQuestions(a).filter(q=>section===undefined||q.section===section)) {const v=a[q.id];if(q.required&&(v===undefined||(typeof v==='string'&&!v.trim())||(Array.isArray(v)&&!v.some(x=>x.trim()))))errors[q.id]='Registre una respuesta para continuar.';else if(v!==undefined){if(q.options&&!q.options.includes(v))errors[q.id]='Seleccione una opción válida.';if(q.type==='mentions'&&(!Array.isArray(v)||v.length>4||v.some(x=>typeof x!=='string'||x.length>150)))errors[q.id]='Máximo cuatro menciones de 150 caracteres.';if(q.type==='text'&&(typeof v!=='string'||v.length>1000))errors[q.id]='Máximo 1.000 caracteres.';}}return errors;}
+export function cleanAnswers(a){return Object.fromEntries(visibleQuestions(a).filter(q=>a[q.id]!==undefined&&a[q.id]!==''&&!(typeof a[q.id]==='string'&&!a[q.id].trim())&&!(Array.isArray(a[q.id])&&!a[q.id].some(x=>typeof x==='string'&&x.trim()))).map(q=>[q.id,a[q.id]]));}
+export function validate(a,section){const errors={};for(const q of visibleQuestions(a).filter(q=>section===undefined||q.section===section)) {const v=a[q.id];if(q.required&&(v===undefined||(typeof v==='string'&&!v.trim())||(Array.isArray(v)&&!v.some(x=>x.trim()))))errors[q.id]='Registre una respuesta para continuar.';else if(v!==undefined&&v!==''){if(q.options&&!q.options.includes(v))errors[q.id]='Seleccione una opción válida.';if(q.type==='mentions'&&(!Array.isArray(v)||v.length>4||v.some(x=>typeof x!=='string'||x.length>150)))errors[q.id]='Máximo cuatro menciones de 150 caracteres.';if(q.type==='text'&&(typeof v!=='string'||v.length>1000))errors[q.id]='Máximo 1.000 caracteres.';}}return errors;}
 export function termination(a){return a.consentimiento==='No'?'no_consentimiento':a.filtro==='No'?'no_elegible':null;}
 export function csvCell(v){let s=Array.isArray(v)?JSON.stringify(v):String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
 export const metadata=['id','encuestador','fecha','hora_inicio','hora_fin','duracion_segundos','zona_aplicacion','estado','motivo_cierre','version','client_id'];
