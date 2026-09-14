@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {PGlite} from '@electric-sql/pglite';
+import {questions,VERSION} from '../src/questionnaire.js';
+test('PostgreSQL: permisos, validación, borradores, secuencia e idempotencia',async()=>{
+ const pg=new PGlite();
+ await pg.exec(`create role anon; create role authenticated; create schema auth; create table auth.users(id uuid primary key); create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`);
+ await pg.exec(readFileSync('database/schema.sql','utf8'));
+ const u1='11111111-1111-4111-8111-111111111111',u2='22222222-2222-4222-8222-222222222222',admin='33333333-3333-4333-8333-333333333333';
+ await pg.exec(`insert into auth.users values('${u1}'),('${u2}'),('${admin}'); insert into public.encuestadores values('${u1}','E001','encuestador',true),('${u2}','E002','encuestador',true),('${admin}','E999','admin',true);`);
+ async function login(id){await pg.exec('reset role');await pg.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await pg.exec('set role authenticated');}
+ const a={};for(const q of questions){if(!q.when)a[q.id]=q.options?q.options[0]:q.type==='mentions'?['Prueba']: 'Prueba';}a.p5_nombre='Prueba';
+ async function save(id,answers,final=true){return (await pg.query('select public.guardar_encuesta($1,now()-interval \'10 minutes\',$2,\'Sector prueba\',$3,$4) as r',[id,answers,final,VERSION])).rows[0].r;}
+ await login(u1);
+ const cid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const d=await save(cid,{consentimiento:'Sí'},false);assert.equal(d.estado,'incompleta');
+ const r=await save(cid,a);assert.equal(r.id,d.id);assert.equal(r.estado,'completa');
+ assert.deepEqual(await save(cid,a),r);assert.equal((await pg.query('select * from encuestas')).rows.length,1);
+ await assert.rejects(()=>save('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',{...a,p6:'Otro'}),/Falta respuesta/);
+ await assert.rejects(()=>save('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',{...a,p1:'Inventado'}),/Opción no válida/);
+ await assert.rejects(()=>pg.exec("update encuestas set estado='completa'"),/permission denied/);
+ await login(u2);assert.equal((await pg.query('select * from encuestas')).rows.length,0);
+ await assert.rejects(()=>save(cid,a),/Registro no autorizado/);
+ const filtered=await save('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',{consentimiento:'Sí',filtro:'No',p1:'Buena'});assert.equal(filtered.estado,'incompleta');assert.notEqual(filtered.id,r.id);
+ assert.deepEqual((await pg.query('select respuestas from encuestas')).rows[0].respuestas,{consentimiento:'Sí',filtro:'No'});
+ const noConsent=await save('cccccccc-cccc-4ccc-8ccc-cccccccccccc',{consentimiento:'No',p1:'Mala'});assert.equal(noConsent.estado,'incompleta');
+ await login(admin);assert.equal((await pg.query('select * from exportacion_encuestas')).rows.length,3);
+ await pg.exec('reset role; set role anon');await assert.rejects(()=>pg.query('select * from encuestas'),/permission denied/);await assert.rejects(()=>save('dddddddd-dddd-4ddd-8ddd-dddddddddddd',a),/permission denied/);
+ await pg.close();
+});
