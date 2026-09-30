@@ -20,6 +20,19 @@ npm test
 npm run build
 ```
 
+### Prueba de navegador segura
+
+```sh
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+Playwright compila el frontend en `.e2e-dist` y abre un servidor propio en `127.0.0.1:4173/encuesta-moniquira/`, con el prefijo usado en GitHub Pages. Prueba Chromium a 1366 y 390 px. No necesita credenciales: reemplaza las variables de conexión por una URL `.invalid` y una clave ficticia, incluso si existe un `.env` local. No reutiliza servidores ya iniciados ni acepta un destino remoto. Mantenga libre el puerto 4173.
+
+Las pruebas navegan desde la pantalla pública hasta «Finalizar demostración», comprueban revisión, condiciones, cierres incompletos, reinicio y preguntas opcionales. Solo permiten solicitudes GET a los archivos del servidor local; la hoja decorativa de Google Fonts recibe CSS vacío localmente, y cualquier otra solicitud se bloquea y hace fallar la prueba. Los service workers están deshabilitados para mantener esa protección. No se simula un guardado exitoso del servidor ni se prueba una contraseña real. Los informes y trazas contienen únicamente datos ficticios y quedan excluidos de Git.
+
+GitHub Actions ejecuta `npm test` y `npm run test:e2e` en pushes a `main`, pull requests y ejecuciones manuales; la publicación depende de que ambos pasen. Los pull requests no publican ni reciben variables de producción. Si falla la verificación, se conserva el diagnóstico E2E durante siete días. El ingreso y envío autenticados siguen pendientes de comprobación manual; consulte `docs/verificacion.md`.
+
 Configure en `.env` la URL y clave pública de un proyecto Supabase independiente. Nunca use `service_role` en variables `VITE_*`. Las variables `VITE_*` se incluyen en el frontend y son visibles para visitantes: la protección de datos depende de autenticación, permisos SQL y RLS. `.env` está excluido del repositorio.
 
 ## Preparar la base de datos
